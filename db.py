@@ -5,9 +5,12 @@ import os
 DB_NAME = "trustscore.db"
 
 def get_db_connection():
-    # Connects to the SQLite file. If it doesn't exist, it creates it.
+    """ 
+    > Connects to the SQLite file. If it doesn't exist, it creates it. 
+    > Row Factory enabling, refer: https://www.pythonlore.com/using-sqlite3-row-factory-for-custom-row-objects/
+    > Enables dict like access..
+    """ 
     conn = sqlite3.connect(DB_NAME)
-    # row_factory allows us to access columns by name (like a dictionary) instead of just index
     conn.row_factory = sqlite3.Row 
     return conn
 
