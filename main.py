@@ -29,9 +29,9 @@ async def create_event(payload: EventPayload):
         > 
         """
         reasons = evaluate_fraud_rules(payload.user_id, payload.device_id)
-
         event_dict = payload.model_dump()
         event_id = save_event(event_dict)
+        print ("Event Recieved: \n ", event_dict)
 
         return EventResponse(
             status='success',
