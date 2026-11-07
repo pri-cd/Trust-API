@@ -1,0 +1,63 @@
+# database.py
+import sqlite3
+import os
+
+DB_NAME = "trustscore.db"
+
+def get_db_connection():
+    # Connects to the SQLite file. If it doesn't exist, it creates it.
+    conn = sqlite3.connect(DB_NAME)
+    # row_factory allows us to access columns by name (like a dictionary) instead of just index
+    conn.row_factory = sqlite3.Row 
+    return conn
+
+def init_db():
+    """Creates the events table if it doesn't already exist."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Basic SQL: CREATE TABLE
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            session_id TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            ip_address TEXT,
+            timestamp TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def save_event(event_data: dict) -> int:
+    """Inserts a new event into the database and returns its ID."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    """
+        > Using parametrized queries..
+        > Also, using ".get()" method for [optional fields] since they return None as default.
+    """
+    cursor.execute('''
+        INSERT INTO events (device_id, user_id, session_id, event_type, ip_address, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (
+        event_data['device_id'],
+        event_data['user_id'],
+        event_data['session_id'],
+        event_data['event_type'],
+        event_data.get('ip_address'),
+        event_data.get('timestamp')
+    ))
+    
+    conn.commit()
+    event_id = cursor.lastrowid
+    conn.close()
+    
+    if event_id is None:
+        raise RuntimeError("The inserted event ID was not generated.")
+    
+    return event_id
