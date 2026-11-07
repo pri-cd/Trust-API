@@ -61,3 +61,18 @@ def save_event(event_data: dict) -> int:
         raise RuntimeError("The inserted event ID was not generated.")
     
     return event_id
+
+
+def is_new_device(device_id : str) -> bool:
+    """ 
+    > Check if device ID already exists in the DB, 
+    > If device is new, return "True".
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT COUNT(*) FROM events WHERE device_id = ?', (device_id,))
+    count = cursor.fetchone()[0]
+    cursor.close()
+
+    return (count == 0)

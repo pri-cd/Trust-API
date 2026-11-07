@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from models import EventPayload, EventResponse
 from contextlib import asynccontextmanager
 from db import init_db, save_event
+from fraud_engine import evaluate_fraud_rules
 
 
 @asynccontextmanager
@@ -27,13 +28,16 @@ async def create_event(payload: EventPayload):
         > Convert model to average dict,
         > 
         """
+        reasons = evaluate_fraud_rules(payload.user_id, payload.device_id)
+
         event_dict = payload.model_dump()
         event_id = save_event(event_dict)
 
         return EventResponse(
             status='success',
             message='Event recorded successfully',
-            event_id=event_id)
+            event_id=event_id,
+            reason_codes=reasons)
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
