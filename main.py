@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException
-from models import EventPayload, EventResponse
+from fastapi import FastAPI, HTTPException, Request, Depends
 from contextlib import asynccontextmanager
+
+from models import EventPayload, EventResponse
 from db import init_db, save_event
 from fraud_engine import evaluate_fraud_rules
+from security import verify_signature
 
 
 @asynccontextmanager
@@ -18,9 +20,16 @@ async def startup_event(app: FastAPI):
 
 app = FastAPI(title="TrustScore Fraud API", version="1.0.0", lifespan=startup_event)
 
+async def get_raw_body(request: Request) -> bytes:
+    return await request.body()
 
 @app.post("/events", response_model=EventResponse, status_code=201)
-async def create_event(payload: EventPayload):
+async def create_event(
+    payload: EventPayload,
+    request: Request,
+    raw_body: bytes = Depends(get_raw_body),
+    is_valid: bool = Depends(lambda r, b: verify_signature(r, b))
+    ):
     """ Endpoint: Receive/Validate session events. """
     try:
 
@@ -41,3 +50,7 @@ async def create_event(payload: EventPayload):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
+
+
+
+    
